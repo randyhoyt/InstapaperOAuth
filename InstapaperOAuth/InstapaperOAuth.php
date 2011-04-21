@@ -25,27 +25,29 @@ require_once('OAuth.php');
 
 class InstapaperOAuth {
   
-    public $http_code;                                  /* Contains the last HTTP status code returned. */
-    public $url;                                        /* Contains the last API call. */
-    public $host = "http://www.instapaper.com/api/1/";  /* Set up the API root URL. */  
-    public $timeout = 30;                               /* Set timeout default. */
+    public $http_code;									/* Contains the last HTTP status code returned. */
+    public $url;										/* Contains the last API call. */
+    public $host = "http://www.instapaper.com/api/1/";	/* Set up the API root URL. */  
+    public $timeout = 30;								/* Set timeout default. */
     public $connecttimeout = 30;                        /* Set connect timeout. */   
-    public $ssl_verifypeer = FALSE;                     /* Verify SSL Cert. */
-    public $format = 'json';                            /* Response format; valid values are 'json' and 'qline' */  
-    public $decode_format = TRUE;                       /* Decode returned data data. */  
-    public $http_info;                                  /* Contains the last HTTP headers returned. */
-    public $useragent = 'InstapaperOAuth';              /* Set the useragnet. */
-    //public $retry = TRUE;                             /* Immediately retry the API call if the response was not successful. */
+    public $ssl_verifypeer = FALSE;						/* Verify SSL Cert. */
+    public $format = 'json';							/* Response format; valid values are 'json' and 'qline' */  
+    public $decode_format = TRUE;						/* Decode returned data data. */  
+    public $http_info;									/* Contains the last HTTP headers returned. */
+    public $useragent = 'InstapaperOAuth';  			/* Set the useragnet. */
+    //public $retry = TRUE;  							/* Immediately retry the API call if the response was not successful. */
 
 
 
-   /* Debug helpers */
+   /* Debug helpers
+    */
     
     function lastStatusCode() { return $this->http_status; }
     function lastAPICall() { return $this->last_api_call; }
 
     
-   /* construct InstapaperOAuth object */
+   /* construct InstapaperOAuth object
+    */
     
     function __construct($consumer_key, $consumer_secret, $oauth_token = NULL, $oauth_token_secret = NULL) {
         $this->sha1_method = new OAuthSignatureMethod_HMAC_SHA1();
@@ -56,36 +58,58 @@ class InstapaperOAuth {
             $this->token = NULL;
         }
       }
+
    
 
    /* Exchange of username and password for access token and secret.
     * 
     *     Array
-    *     (
+	*     (
     *         [oauth_token] => 4dNwBiwLrVi6ORdax401Ql2jTJUIN7sWTO6nBD3ndtRMh8b5at
     *         [oauth_token_secret] => d0mIOY9iEV0hmDa8F700v3UhW8JRdZkjD3GBI249dFf4hPft8q
     *     )
     */
       
-    function get_access_token($username, $password) {
-        $parameters = array();
-        $parameters['x_auth_username'] = $username;
-        $parameters['x_auth_password'] = $password;
-        $parameters['x_auth_mode'] = 'client_auth';
-        $request = $this->oAuthRequest($this->host . "oauth/access_token", 'POST', $parameters);
-        $token = OAuthUtil::parse_parameters($request);    
-        $this->token = new OAuthConsumer($token['oauth_token'], $token['oauth_token_secret']);
-        return $token;
-    }
+	function get_access_token($username, $password) {
+		$parameters = array();
+		$parameters['x_auth_username'] = $username;
+    	$parameters['x_auth_password'] = $password;
+		$parameters['x_auth_mode'] = 'client_auth';
+		$request = $this->oAuthRequest($this->host . "oauth/access_token", 'POST', $parameters);
+		$token = OAuthUtil::parse_parameters($request);    
+		$this->token = new OAuthConsumer($token['oauth_token'], $token['oauth_token_secret']);
+		return $token;
+	}
 
+	
+   /* Retrieve information about the currently logged in user.
+    * 
+    *    Array
+    *    (
+    *        [0] => stdClass Object
+    *            (
+    *                [type] => user
+    *                [user_id] => 
+    *                [username] => 
+    *                [subscription_is_active] => 0 or 1
+    *            )
+    *    )
+    */
+	
+	function verify_credentials() {
 
-  
-/*   Instapaper API Requests
- *   -----------------------------------------
- */         
+		$parameters = array();
+		$parameters['format'] = $this->format;
+		$request = $this->oAuthRequest($this->host . "account/verify_credentials", 'POST', $parameters);				
+		$user = $this->maybe_decode($request);
+		return $user;
 
-    
-   /* list_folders
+	}
+	
+	
+
+	
+   /*
     * Get a list of the account's user-created folders.
     * 
     *     Array
@@ -101,20 +125,20 @@ class InstapaperOAuth {
     *         [...]
     *     )          
     */
-    
-    function list_folders() {
+	
+	function list_folders() {
 
-        $parameters = array();
-        $parameters['format'] = $this->format;
-        $request = $this->oAuthRequest($this->host . "folders/list", 'POST', $parameters);                
-        $folders = $this->maybe_decode($request);
-        return $folders;
-    
-    }
-    
-    
-   /* list_bookmarks
-    * Lists the user's unread bookmarks, and can also synchronize reading positions.
+		$parameters = array();
+		$parameters['format'] = $this->format;
+		$request = $this->oAuthRequest($this->host . "folders/list", 'POST', $parameters);				
+		$folders = $this->maybe_decode($request);
+		return $folders;
+	
+	}
+	
+	
+   /**
+    * Lists the user's bookmarks.
     * 
     *     Array
     *     (
@@ -130,83 +154,92 @@ class InstapaperOAuth {
     *          )          
     */
 
-    function list_bookmarks($limit="",$folder_id="",$have="") {
+	function list_bookmarks($limit="",$folder_id="",$have="") {
 
-        $parameters = array();
-        $parameters['format'] = $this->format;        
-        $parameters['limit'] = $limit;
-        $parameters['folder_id'] = $folder_id;
-        $parameters['have'] = $have;
-        $request = $this->oAuthRequest($this->host . "bookmarks/list", 'POST', $parameters);
-        $bookmarks = $this->maybe_decode($request);
-        return $bookmarks;
-    
-    }
-    
-    
+		$parameters = array();
+		$parameters['format'] = $this->format;		
+		$parameters['limit'] = $limit;
+    	$parameters['folder_id'] = $folder_id;
+		$parameters['have'] = $have;
+		$request = $this->oAuthRequest($this->host . "bookmarks/list", 'POST', $parameters);
+		$bookmarks = $this->maybe_decode($request);
+		return $bookmarks;
+	
+	}
+	
+	
+	
+	/* -----------------------------------------------------------
+	 * There are more methods available through the Instapaper API.
+	 * Stay tuned for updates or -- better yet -- add a method and
+	 * contribute back to the library.
+	 * ----------------------------------------------------------- */
+
+	
+	
 
 /*   Helper functions for formatting responses
  *   -----------------------------------------
  */
-    
-    
+	
+	
    /*   Check the InstapaperOAuth object's settings and (if required)
     *   decode the response.        
-    */    
-    
-    function maybe_decode($request) {
-        if ($this->decode_format == TRUE) {
-            if ($this->format == "qline")
-                return $this->qline_decode($request);
-            else 
-                return json_decode($request); 
-        } else {        
-            return $request;
-        }
-    }        
+    */	
+	
+	function maybe_decode($request) {
+		if ($this->decode_format == TRUE) {
+			if ($this->format == "qline")
+				return $this->qline_decode($request);
+			else 
+				return json_decode($request); 
+		} else {		
+			return $request;
+		}
+	}		
 
-    
+	
    /*   Decodes Instapaper's qline format, a simple custom format supported for environments
     *   without convenient JSON decoding, to the same resulting format as json_decode.      
-    */    
-    
-    function qline_decode($qline_string) {
-    
-        $results = array();
+    */	
+	
+	function qline_decode($qline_string) {
+	
+		$results = array();
 
-        $lines = explode("\n",$qline_string);
-        foreach($lines as $line) {
-        
-            $attributes = new stdClass();
-            $pairs = explode("&",$line);
-            foreach($pairs as $pair) {
-                $parts = explode("=",$pair);
-                $attributes->$parts[0] = $parts[1]; 
-            }
-            
-            $results[] = $attributes; 
+		$lines = explode("\n",$qline_string);
+		foreach($lines as $line) {
+		
+			$attributes = new stdClass();
+			$pairs = explode("&",$line);
+			foreach($pairs as $pair) {
+				$parts = explode("=",$pair);
+				$attributes->$parts[0] = $parts[1]; 
+			}
+			
+			$results[] = $attributes; 
 
-        }
+		}
 
-        return $results;
-    
-    }
+		return $results;
+	
+	}
+
 
 
 
 /*   Wrapper functions for oAuthRequest
  *   ----------------------------------   
- *   by Abraham Williams (abraham@abrah.am) http://abrah.am
  *   from twitteroauth https://github.com/abraham/twitteroauth
- *   
+ *   by Abraham Williams (abraham@abrah.am) http://abrah.am
  *     
- */    
-
+ */	
+	
 
    /*
     * GET wrapper for oAuthRequest.
     */
-    
+	
     function get($url, $parameters = array()) {
         $response = $this->oAuthRequest($url, 'GET', $parameters);
         if ($this->format === 'json' && $this->decode_json) {
@@ -304,15 +337,15 @@ class InstapaperOAuth {
     * Get the header info to store.
     */
   
-    function getHeader($ch, $header) {
-        $i = strpos($header, ':');
-        if (!empty($i)) {
-            $key = str_replace('-', '_', strtolower(substr($header, 0, $i)));
-            $value = trim(substr($header, $i + 2));
-            $this->http_header[$key] = $value;
-        }
-        return strlen($header);
-    }
+	function getHeader($ch, $header) {
+	    $i = strpos($header, ':');
+	    if (!empty($i)) {
+	        $key = str_replace('-', '_', strtolower(substr($header, 0, $i)));
+	        $value = trim(substr($header, $i + 2));
+	        $this->http_header[$key] = $value;
+	    }
+	    return strlen($header);
+	}
 
 }
 
