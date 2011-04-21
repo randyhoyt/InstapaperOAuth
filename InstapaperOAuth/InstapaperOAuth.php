@@ -65,8 +65,8 @@ class InstapaperOAuth {
     * 
     *     Array
 	*     (
-    *         [oauth_token] => 4dNwBiwLrVi6ORdax401Ql2jTJUIN7sWTO6nBD3ndtRMh8b5at
-    *         [oauth_token_secret] => d0mIOY9iEV0hmDa8F700v3UhW8JRdZkjD3GBI249dFf4hPft8q
+    *         [oauth_token] => 
+    *         [oauth_token_secret] =>
     *     )
     */
       
